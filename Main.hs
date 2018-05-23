@@ -25,17 +25,23 @@ writeToFile fileName contents = do
     putStrLn $ "Writing contents to file " ++ fileName ++ " ..."
     mapM_ (appendFile fileName) $ intersperse "\n" contents
 
-chapterScraper :: [String] -> IO ()
-chapterScraper args = do
-    results <- scrapeURL (getURL args) scraper
+chapterScraper :: FilePath -> URL -> IO Bool
+chapterScraper fileName url = do
+    results <- scrapeURL url scraper
     let contents :: [String]
         contents = fromMaybe [] results
-    if null contents then putStrLn "Could not retrieve contents."
+    if null contents then return False
     else do
-        let fileName :: FilePath
-            fileName = foldl1 (++) args ++ "HTML.txt"
         writeToFile fileName contents
+        return True
+
+bibleScraper :: IO ()
+bibleScraper = do
+    args <- getArgs
+    let fileName :: FilePath
+        fileName = foldl1 (++) args ++ "HTML.txt"
+    success <- chapterScraper fileName $ getURL args
+    return ()
 
 main :: IO ()
-main = do
-    getArgs >>= chapterScraper
+main = bibleScraper
