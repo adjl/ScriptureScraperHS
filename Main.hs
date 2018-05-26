@@ -20,22 +20,28 @@ substitutions = [
     ("<span\\s+?class=\"oblique\">“?(.+?)”?<\\/span>",       WrapReplace "``" "''"),
     ("<i>(.+?)<\\/i>",                                       WrapReplace "\\emph{" "}")]
 
-subRegex :: Substitution -> String -> String
-subRegex sub input
+subRegex :: String -> Substitution -> String
+subRegex input sub
     | input == output = output
     | otherwise       = subRegex sub output
     where
         output :: String
         output = subRegex' sub input
 
-subRegex' :: Substitution -> String -> String
-subRegex' (regex, replace) input
+subRegex' :: String -> Substitution -> String
+subRegex' input (regex, replace)
     | null match  = input
     | null groups = before ++ body replace ++ after
     | otherwise   = before ++ head replace ++ head groups ++ end replace ++ after
     where
         matchResult :: (String, String, String, [String])
         (before, match, after, groups) = input =~ regex
+
+subHTML :: [String] -> [String]
+subHTML = map subHTML'
+    where
+        subHTML' :: String -> String
+        subHTML' rawHTML = foldl1 (subRegex rawHTML) substitutions
 
 scraper :: Scraper String [String]
 scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-html"]) $ do
