@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+
+import Text.HTML.Scalpel
 import Text.Regex.PCRE ((=~))
 
 data Replacement
@@ -33,3 +36,13 @@ subRegex' (regex, replace) input
     where
         matchResult :: (String, String, String, [String])
         (before, match, after, groups) = input =~ regex
+
+scraper :: Scraper String [String]
+scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-html"]) $ do
+    chroots ("p" // "span" @: [hasClass "text"]) $ do
+        innerHTML anySelector >>= return
+
+getURL :: [String] -> URL
+getURL [book, chapter, version] = "https://www.biblegateway.com/passage/?"
+    ++ "search=" ++ book ++ "+" ++ chapter
+    ++ "&version=" ++ version
