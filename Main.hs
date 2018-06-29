@@ -17,6 +17,12 @@ scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-
 tagsToStrip :: [String]
 tagsToStrip = ["span", "sup"]
 
+oblique :: String
+oblique = "oblique"
+
+isObliqueTag :: Tag String -> Bool
+isObliqueTag tag = not . null $ fromAttrib oblique tag
+
 getTags :: URL -> IO [Tag String]
 getTags url = parseHTML <$> scrapeURL url scraper
 
@@ -29,11 +35,12 @@ filterTags = filterTags_ (False, "")
 filterTags_ :: (Bool, String) -> [Tag String] -> [Tag String]
 filterTags_ _ [] = []
 filterTags_ (False, _) (tag@(TagOpen name _):tags)
-    | elem name tagsToStrip =       filterTags_ (True, name) tags
-    | otherwise             = tag : filterTags_ (False, "")  tags
-filterTags_ (True, tagName) (tag@(TagClose name):tags)
-    | name == tagName = filterTags_ (False, "")     tags
-    | otherwise       = filterTags_ (True, tagName) tags
+    | elem name tagsToStrip = filterTags_ (True,  name)    tags
+    | isObliqueTag tag      = filterTags_ (False, oblique) tags
+filterTags_ (False, word) (TagClose _:tags)
+    | word == oblique = filterTags_ (False, "") tags
+filterTags_ (True, word)  (tag@(TagClose name):tags)
+    | word == name    = filterTags_ (False, "") tags
 filterTags_ state@(stripMode, _) (tag:tags)
     | stripMode =       filterTags_ state tags
     | otherwise = tag : filterTags_ state tags
