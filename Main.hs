@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Functor
 import Text.HTML.Scalpel
 import Text.HTML.TagSoup
 
@@ -15,8 +14,26 @@ scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-
     chroots ("p" // "span" @: [hasClass "text"]) $ do
         innerHTML anySelector
 
-parseHTML :: Maybe [String] -> [Tag String]
-parseHTML = maybe [] (\s -> parseTags $ foldl1 (++) s)
+tagsToStrip :: [String]
+tagsToStrip = ["span", "sup"]
 
 getTags :: URL -> IO [Tag String]
-getTags url = scrapeURL url scraper <&> parseHTML
+getTags url = parseHTML <$> scrapeURL url scraper
+
+parseHTML :: Maybe [String] -> [Tag String]
+parseHTML = maybe [] (\html -> parseTags $ foldl1 (++) html)
+
+filterTags :: [Tag String] -> [Tag String]
+filterTags = filterTags_ (False, "")
+
+filterTags_ :: (Bool, String) -> [Tag String] -> [Tag String]
+filterTags_ _ [] = []
+filterTags_ (False, _) (tag@(TagOpen name _):tags)
+    | elem name tagsToStrip =       filterTags_ (True, name) tags
+    | otherwise             = tag : filterTags_ (False, "")  tags
+filterTags_ (True, tagName) (tag@(TagClose name):tags)
+    | name == tagName = filterTags_ (False, "")     tags
+    | otherwise       = filterTags_ (True, tagName) tags
+filterTags_ state@(stripMode, _) (tag:tags)
+    | stripMode =       filterTags_ state tags
+    | otherwise = tag : filterTags_ state tags
