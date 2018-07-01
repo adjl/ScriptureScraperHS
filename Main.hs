@@ -72,9 +72,12 @@ subText = subText_ regexes
     where
         regexes :: [(Regex, String)]
         regexes = [
-            (mkRegex "\\\8212", "---"),
-            (mkRegex "\\\8220", "``"),
-            (mkRegex "\\\8221", "''")]
+            (mkRegex "\\\8212",     "---"),
+            (mkRegex "\\\8220",     "``"),
+            (mkRegex "\\\8221",     "''"),
+            (mkRegex "(---|[.:;])", "\\1 "),
+            (mkRegex "---\\s+",     "---"),
+            (mkRegex "\\s+",        " ")]
 
 subText_ :: [(Regex, String)] -> String -> String
 subText_ [] text = text
