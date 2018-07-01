@@ -2,6 +2,7 @@
 
 import Text.HTML.Scalpel
 import Text.HTML.TagSoup
+import Text.Regex
 
 -- TODO: ByteString
 
@@ -61,3 +62,22 @@ filterTags_ state@(stripMode, _) (tag:tags)
     where
         filteredTags :: [Tag String]
         filteredTags = filterTags_ state tags
+
+concatText :: [Tag String] -> String
+concatText tags = foldl1 (++) $ map fromTagText tags
+
+subText :: String -> String
+subText = subText_ regexes
+    where
+        regexes :: [(Regex, String)]
+        regexes = [
+            (mkRegex "\\\8212", "---"),
+            (mkRegex "\\\8220", "``"),
+            (mkRegex "\\\8221", "''")]
+
+subText_ :: [(Regex, String)] -> String -> String
+subText_ [] text = text
+subText_ ((pattern, replacement):regexes) text = subText_ regexes replacedText
+    where
+        replacedText :: String
+        replacedText = subRegex pattern text replacement
