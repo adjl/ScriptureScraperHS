@@ -77,6 +77,8 @@ cleanText = cleanText_ regexes
             (mkRegex "\\\8221",     "''"),
             (mkRegex "(---|[.:;])", "\\1 "),
             (mkRegex "---\\s+",     "---"),
+            (mkRegex "``\\s+",      "``"),
+            (mkREgex "\\s+''",      "''"),
             (mkRegex "\\s+",        " ")]
 
 cleanText_ :: [(Regex, String)] -> String -> String
