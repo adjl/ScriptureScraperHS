@@ -67,8 +67,8 @@ filterTags_ state@(stripMode, _) (tag:tags)
 concatText :: [Tag String] -> String
 concatText tags = foldl1 (++) $ map fromTagText tags
 
-subText :: String -> String
-subText = subText_ regexes
+cleanText :: String -> String
+cleanText = cleanText_ regexes
     where
         regexes :: [(Regex, String)]
         regexes = [
@@ -79,21 +79,41 @@ subText = subText_ regexes
             (mkRegex "---\\s+",     "---"),
             (mkRegex "\\s+",        " ")]
 
-subText_ :: [(Regex, String)] -> String -> String
-subText_ [] text = text
-subText_ ((pattern, replacement):regexes) text = subText_ regexes replacedText
+cleanText_ :: [(Regex, String)] -> String -> String
+cleanText_ [] text = text
+cleanText_ ((pattern, replacement):regexes) text = cleanText_ regexes replacedText
     where
         replacedText :: String
         replacedText = subRegex pattern text replacement
 
 processTagText :: [Tag String] -> String
-processTagText = subText . concatText . filterTags
+processTagText = cleanText . concatText . filterTags
 
-mkFilename :: [String] -> String
-mkFilename citation = foldl1 (++) $ citation ++ [".txt"]
+extractChapter :: [String] -> IO String
+extractChapter chapter = do
+    (getTags $ getURL chapter) >>= return . processTagText
+
+extractBook :: [String] -> [IO String]
+extractBook [book, version, chapters] = [extractChapter $ getCitation chapter | chapter <- [1..numChapters]]
+    where
+        numChapters :: Int
+        numChapters = read chapters :: Int
+
+        getCitation :: Int -> [String]
+        getCitation chapter = [book, show chapter, version]
+
+bibleScraper :: IO ()
+bibleScraper = do
+    citation@[book, version, _] <- getArgs
+    let
+        bookFilename :: String
+        bookFilename = book ++ version ++ ".txt"
+
+        writeChapter :: IO String -> IO ()
+        writeChapter chapter = chapter >>= appendFile bookFilename
+
+    writeFile bookFilename ""
+    mapM_ writeChapter $ extractBook citation
 
 main :: IO ()
-main = do
-    citation <- getArgs
-    tags <- getTags $ getURL citation
-    writeFile (mkFilename citation) $ processTagText tags
+main = bibleScraper
