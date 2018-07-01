@@ -28,10 +28,14 @@ filterTags = filterTags_ (False, "")
 filterTags_ :: (Bool, String) -> [Tag String] -> [Tag String]
 filterTags_ _ [] = []
 filterTags_ (False, _) (tag@(TagOpen name _):tags)
-    | name == "i"    = openEmphTag : filteredTags (False, "i")
-    | isOblique tag  =               filteredTags (False, "o")
-    | stripElem name =               filteredTags (True,  name)
+    | name == "i"      = openEmphTag : filteredTags (False, "i")
+    | isDivineName tag = openNameTag : filteredTags (False, "d")
+    | isOblique tag    =               filteredTags (False, "o")
+    | stripElem name   =               filteredTags (True,  name)
     where
+        isDivineName :: Tag String -> Bool
+        isDivineName tag = fromAttrib "class" tag == "small-caps divine-name"
+
         isOblique :: Tag String -> Bool
         isOblique tag = fromAttrib "class" tag == "oblique"
 
@@ -44,15 +48,19 @@ filterTags_ (False, _) (tag@(TagOpen name _):tags)
         openEmphTag :: Tag String
         openEmphTag = TagText "\\emph{"
 
+        openNameTag :: Tag String
+        openNameTag = TagText "\textsc{"
+
 filterTags_ (False, word) (TagClose _ : tags)
-    | word == "i" = closeEmphTag : filteredTags
-    | word == "o" =                filteredTags
+    | word == "i" = closingTag : filteredTags
+    | word == "d" = closingTag : filteredTags
+    | word == "o" =              filteredTags
     where
         filteredTags :: [Tag String]
         filteredTags = filterTags_ (False, "") tags
 
-        closeEmphTag :: Tag String
-        closeEmphTag = TagText "}"
+        closingTag :: Tag String
+        closingTag = TagText "}"
 
 filterTags_ (True, word) (TagClose name : tags)
     | word == name = filterTags_ (False, "") tags
@@ -78,7 +86,7 @@ cleanText = cleanText_ regexes
             (mkRegex "(---|[.:;])", "\\1 "),
             (mkRegex "---\\s+",     "---"),
             (mkRegex "``\\s+",      "``"),
-            (mkREgex "\\s+''",      "''"),
+            (mkRegex "\\s+''",      "''"),
             (mkRegex "\\s+",        " ")]
 
 cleanText_ :: [(Regex, String)] -> String -> String
