@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import System.Environment
 import Text.HTML.Scalpel
 import Text.HTML.TagSoup
 import Text.Regex
@@ -81,3 +82,15 @@ subText_ ((pattern, replacement):regexes) text = subText_ regexes replacedText
     where
         replacedText :: String
         replacedText = subRegex pattern text replacement
+
+processTagText :: [Tag String] -> String
+processTagText = subText . concatText . filterTags
+
+mkFilename :: [String] -> String
+mkFilename citation = foldl1 (++) $ citation ++ [".txt"]
+
+main :: IO ()
+main = do
+    citation <- getArgs
+    tags <- getTags $ getURL citation
+    writeFile (mkFilename citation) $ processTagText tags
