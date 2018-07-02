@@ -106,7 +106,8 @@ extractChapter chapter = do
     (getTags $ getURL chapter) >>= return . processTagText
 
 extractBook :: [String] -> [IO String]
-extractBook [book, version, chapters] = [extractChapter $ getCitation chapter | chapter <- [1..numChapters]]
+extractBook [book, version, chapters] =
+    [extractChapter $ getCitation chapter | chapter <- [1..numChapters]]
     where
         numChapters :: Int
         numChapters = read chapters :: Int
@@ -114,9 +115,16 @@ extractBook [book, version, chapters] = [extractChapter $ getCitation chapter | 
         getCitation :: Int -> [String]
         getCitation chapter = [book, show chapter, version]
 
-bibleScraper :: IO ()
-bibleScraper = do
-    citation@[book, version, _] <- getArgs
+processArgs :: [String] -> [String]
+processArgs args
+    | length args > 3 = book : (drop 2 args)
+    | otherwise       = args
+    where
+        book :: String
+        book = (args !! 0) ++ "%20" ++ (args !! 1)
+
+bibleScraper :: [String] -> IO ()
+bibleScraper citation@[book, version, _] = do
     let
         bookFilename :: String
         bookFilename = book ++ version ++ ".txt"
@@ -128,4 +136,4 @@ bibleScraper = do
     mapM_ writeChapter $ extractBook citation
 
 main :: IO ()
-main = bibleScraper
+main = do getArgs >>= bibleScraper . processArgs
