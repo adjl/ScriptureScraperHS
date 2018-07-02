@@ -85,6 +85,7 @@ cleanText = cleanText_ regexes
             (mkRegex "\\\8221",                     "''"),
             (mkRegex "([[:graph:]])(``)",           "\\1 \\2"),
             (mkRegex "(''|[!,.:;?])([[:alnum:]])",  "\\1 \\2"),
+            (mkRegex "([[:graph:]])$",              "\\1 "),
             (mkRegex "[[:space:]]*---[[:space:]]*", "---"),
             (mkRegex "``[[:space:]]*",              "``"),
             (mkRegex "[[:space:]]*''",              "''"),
