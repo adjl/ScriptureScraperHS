@@ -123,8 +123,8 @@ processArgs args
         book :: String
         book = (args !! 0) ++ "%20" ++ (args !! 1)
 
-bibleScraper :: [String] -> IO ()
-bibleScraper citation@[book, version, _] = do
+scriptureScraper :: [String] -> IO ()
+scriptureScraper citation@[book, version, _] = do
     let
         bookFilename :: String
         bookFilename = book ++ version ++ ".txt"
@@ -136,4 +136,4 @@ bibleScraper citation@[book, version, _] = do
     mapM_ writeChapter $ extractBook citation
 
 main :: IO ()
-main = do getArgs >>= bibleScraper . processArgs
+main = do getArgs >>= scriptureScraper . processArgs
