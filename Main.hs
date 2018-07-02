@@ -80,17 +80,15 @@ cleanText = cleanText_ regexes
     where
         regexes :: [(Regex, String)]
         regexes = [
-            (mkRegex "\\\8212",     "---"),
-            (mkRegex "\\\8220",     "``"),
-            (mkRegex "\\\8221",     "''"),
-            (mkRegex "(\\w)(``)",   "\\1 \\2"),
-            (mkRegex spacing,       "\\1 \\2"),
-            (mkRegex "\\s*---\\s*", "---"),
-            (mkRegex "``\\s*",      "``"),
-            (mkRegex "\\s*''",      "''"),
-            (mkRegex "\\s+",        " ")]
-        spacing :: String
-        spacing = "(''|[!,.:;?])([\\w`])"
+            (mkRegex "\\\8212",                     "---"),
+            (mkRegex "\\\8220",                     "``"),
+            (mkRegex "\\\8221",                     "''"),
+            (mkRegex "([[:graph:]])(``)",           "\\1 \\2"),
+            (mkRegex "(''|[!,.:;?])([[:alnum:]])",  "\\1 \\2"),
+            (mkRegex "[[:space:]]*---[[:space:]]*", "---"),
+            (mkRegex "``[[:space:]]*",              "``"),
+            (mkRegex "[[:space:]]*''",              "''"),
+            (mkRegex "[[:space:]]{2,}",             " ")]
 
 cleanText_ :: [(Regex, String)] -> String -> String
 cleanText_ [] text = text
