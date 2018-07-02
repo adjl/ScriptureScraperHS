@@ -49,7 +49,7 @@ filterTags_ (False, _) (tag@(TagOpen name _):tags)
         openEmphTag = TagText "\\emph{"
 
         openNameTag :: Tag String
-        openNameTag = TagText "\textsc{"
+        openNameTag = TagText "\\textsc{"
 
 filterTags_ (False, word) (TagClose _ : tags)
     | word == "i" = closingTag : filteredTags
@@ -80,14 +80,14 @@ cleanText = cleanText_ regexes
     where
         regexes :: [(Regex, String)]
         regexes = [
-            (mkRegex "\\\8212",     "---"),
-            (mkRegex "\\\8220",     "``"),
-            (mkRegex "\\\8221",     "''"),
-            (mkRegex "(---|[.:;])", "\\1 "),
-            (mkRegex "---\\s+",     "---"),
-            (mkRegex "``\\s+",      "``"),
-            (mkRegex "\\s+''",      "''"),
-            (mkRegex "\\s+",        " ")]
+            (mkRegex "\\\8212",        "---"),
+            (mkRegex "\\\8220",        "``"),
+            (mkRegex "\\\8221",        "''"),
+            (mkRegex "(---|''|[.:;])", "\\1 "),
+            (mkRegex "---\\s+",        "---"),
+            (mkRegex "``\\s+",         "``"),
+            (mkRegex "\\s+''",         "''"),
+            (mkRegex "\\s+",           " ")]
 
 cleanText_ :: [(Regex, String)] -> String -> String
 cleanText_ [] text = text
