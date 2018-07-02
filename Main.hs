@@ -7,14 +7,27 @@ import Text.Regex
 
 -- TODO: ByteString
 
-getURL :: [String] -> URL
-getURL [book, chapter, version] = "https://www.biblegateway.com/passage/?" ++
-    "search=" ++ book ++ "+" ++ chapter ++ "&version=" ++ version
-
 scraper :: Scraper String [String]
 scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-html"]) $ do
     chroots ("p" // "span" @: [hasClass "text"]) $ do
         innerHTML anySelector
+
+getURL :: [String] -> URL
+getURL [book, chapter, version] = "https://www.biblegateway.com/passage/?" ++
+    "search=" ++ book ++ "+" ++ chapter ++ "&version=" ++ version
+
+regexes :: [(Regex, String)]
+regexes = [
+    (mkRegex "\\\8212",                     "---"),
+    (mkRegex "\\\8220",                     "``"),
+    (mkRegex "\\\8221",                     "''"),
+    (mkRegex "([[:graph:]])(``)",           "\\1 \\2"),
+    (mkRegex "(''|[!,.:;?])([[:alnum:]])",  "\\1 \\2"),
+    (mkRegex "([[:graph:]])$",              "\\1 "),
+    (mkRegex "[[:space:]]*---[[:space:]]*", "---"),
+    (mkRegex "``[[:space:]]*",              "``"),
+    (mkRegex "[[:space:]]*''",              "''"),
+    (mkRegex "[[:space:]]{2,}",             " ")]
 
 getTags :: URL -> IO [Tag String]
 getTags url = parseHTML <$> scrapeURL url scraper
@@ -77,19 +90,6 @@ concatText tags = foldl1 (++) $ map fromTagText tags
 
 cleanText :: String -> String
 cleanText = cleanText_ regexes
-    where
-        regexes :: [(Regex, String)]
-        regexes = [
-            (mkRegex "\\\8212",                     "---"),
-            (mkRegex "\\\8220",                     "``"),
-            (mkRegex "\\\8221",                     "''"),
-            (mkRegex "([[:graph:]])(``)",           "\\1 \\2"),
-            (mkRegex "(''|[!,.:;?])([[:alnum:]])",  "\\1 \\2"),
-            (mkRegex "([[:graph:]])$",              "\\1 "),
-            (mkRegex "[[:space:]]*---[[:space:]]*", "---"),
-            (mkRegex "``[[:space:]]*",              "``"),
-            (mkRegex "[[:space:]]*''",              "''"),
-            (mkRegex "[[:space:]]{2,}",             " ")]
 
 cleanText_ :: [(Regex, String)] -> String -> String
 cleanText_ [] text = text
