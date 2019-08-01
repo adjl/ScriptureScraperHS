@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 import System.Environment
 import Text.HTML.Scalpel
 import Text.HTML.TagSoup
-import Text.Regex
 
 -- TODO: ByteString
 
@@ -15,19 +15,6 @@ scraper = chroot ("div" @: [hasClass "result-text-style-normal", hasClass "text-
 getURL :: [String] -> URL
 getURL [book, chapter, version] = "https://www.biblegateway.com/passage/?" ++
     "search=" ++ book ++ "+" ++ chapter ++ "&version=" ++ version
-
-regexes :: [(Regex, String)]
-regexes = [
-    (mkRegex "\\\8212",                     "---"),
-    (mkRegex "\\\8220",                     "``"),
-    (mkRegex "\\\8221",                     "''"),
-    (mkRegex "([[:graph:]])(``)",           "\\1 \\2"),
-    (mkRegex "(''|[!,.:;?])([[:alnum:]])",  "\\1 \\2"),
-    (mkRegex "([[:graph:]])$",              "\\1 "),
-    (mkRegex "[[:space:]]*---[[:space:]]*", "---"),
-    (mkRegex "``[[:space:]]*",              "``"),
-    (mkRegex "[[:space:]]*''",              "''"),
-    (mkRegex "[[:space:]]{2,}",             " ")]
 
 getTags :: URL -> IO [Tag String]
 getTags url = parseHTML <$> scrapeURL url scraper
@@ -88,18 +75,9 @@ filterTags_ state@(stripMode, _) (tag:tags)
 concatText :: [Tag String] -> String
 concatText tags = foldl1 (++) $ map fromTagText tags
 
-cleanText :: String -> String
-cleanText = cleanText_ regexes
-
-cleanText_ :: [(Regex, String)] -> String -> String
-cleanText_ [] text = text
-cleanText_ ((pattern, replacement):regexes) text = cleanText_ regexes replacedText
-    where
-        replacedText :: String
-        replacedText = subRegex pattern text replacement
-
 processTagText :: [Tag String] -> String
-processTagText = cleanText . concatText . filterTags
+-- processTagText = cleanText . concatText . filterTags
+processTagText = concatText . filterTags
 
 extractChapter :: [String] -> IO String
 extractChapter chapter = do
@@ -115,14 +93,6 @@ extractBook [book, version, chapters] =
         getCitation :: Int -> [String]
         getCitation chapter = [book, show chapter, version]
 
-processArgs :: [String] -> [String]
-processArgs args
-    | length args > 3 = book : (drop 2 args)
-    | otherwise       = args
-    where
-        book :: String
-        book = (args !! 0) ++ "%20" ++ (args !! 1)
-
 scriptureScraper :: [String] -> IO ()
 scriptureScraper citation@[book, version, _] = do
     let
@@ -134,6 +104,14 @@ scriptureScraper citation@[book, version, _] = do
 
     writeFile bookFilename ""
     mapM_ writeChapter $ extractBook citation
+
+processArgs :: [String] -> [String]
+processArgs args
+    | length args > 3 = book : (drop 2 args)
+    | otherwise       = args
+    where
+        book :: String
+        book = (args !! 0) ++ "%20" ++ (args !! 1)
 
 main :: IO ()
 main = do getArgs >>= scriptureScraper . processArgs
